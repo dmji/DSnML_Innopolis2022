@@ -2,3 +2,4 @@ emnist-letters-test-data.csv/emnist-letters-test.csv
 emnist-letters-test-data.csv/emnist-letters-train.csv
 emnist-letters-test-data.csv/emnist-letters-exam.csv
 emnist-letters-test-data.csv/results.csv
+15_LSTM/dataset.json
