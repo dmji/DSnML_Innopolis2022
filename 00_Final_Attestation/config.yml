@@ -1,5 +1,5 @@
 data:
-  path_to_data: ../DaNetQA
+  path_to_data: .
   train_filename: train.jsonl
   validation_filename: val.jsonl
   test_filename: val.jsonl
