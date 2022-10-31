@@ -1,2 +1,0 @@
-36 Seq2Seq, Encoder-Decoder. Attention: что за файлы с .torch, как с ними работать?
-40 SARIMA: почему для auto_arima при кратом увеличении period: 12, 24, 36, 48, 60... уменьшается и AIC 
