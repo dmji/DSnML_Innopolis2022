@@ -2,11 +2,7 @@
 *.tar.gz
 *.zip
 28_Transformet_BERT/Data/IMDB Dataset.csv
-28_Transformet_BERT/Kinopoisk_eval_10%.csv
-28_Transformet_BERT/Kinopoisk_eval_20%.csv
-28_Transformet_BERT/Kinopoisk_eval_50%.csv
-28_Transformet_BERT/Kinopoisk_eval_100%.csv
-28_Transformet_BERT/Kinopoisk_train_10%.csv
-28_Transformet_BERT/Kinopoisk_train_20%.csv
-28_Transformet_BERT/Kinopoisk_train_50%.csv
-28_Transformet_BERT/Kinopoisk_train_100%.csv
+28_Transformet_BERT/Kinopoisk_eval_*%.csv
+28_Transformet_BERT/Kinopoisk_train_*%.csv
+28_Transformet_BERT/logdir/*
+28_Transformet_BERT/model_*%.pt
