@@ -18,7 +18,7 @@ training:
   num_epochs: 40                                      # smth around 2-6 epochs is typically fine when finetuning transformers
   accum_steps: 4                                      # one optimization step for that many backward passes
   batch_size: 8                                       # depends on your available GPU memory (in combination with max seq length)
-  log_dir: logdir_L2                                  # for training logs and tensorboard visualizations
+  log_dir: logdir                                     # for training logs and tensorboard visualizations
 
 general:
   seed: 17                                            # random seed for reproducibility
