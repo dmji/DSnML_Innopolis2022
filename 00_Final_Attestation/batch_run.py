@@ -9,8 +9,6 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
 import os
 
-exit(-1)
-
 import yaml
 from catalyst.utils import set_global_seed, prepare_cudnn
 from transformers import AutoTokenizer, AutoConfig, AutoModel
@@ -423,4 +421,4 @@ runner.train(
     verbose=True,
 )
 
-exit(-1)
+exit(20)

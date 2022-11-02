@@ -3,15 +3,11 @@ data:
   train_filename: train_L5.jsonl
   validation_filename: val_L5.jsonl
   test_filename: test_L5.jsonl
-  text_field_name: passage
-  quest_field_name: question
-  label_field_name: label
 
 model:
   model_name: DeepPavlov/rubert-base-cased-sentence   # pretrained model from Transformers 
 #  model_name: sberbank-ai/ruBert-base                # pretrained model from Transformers 
   max_seq_length: 512                                 # depends on your available GPU memory (in combination with batch size)
-  num_classes: 2
 
 training:
   learn_rate: 3e-5                                    # learning rate is typically ~1e-5 for transformers

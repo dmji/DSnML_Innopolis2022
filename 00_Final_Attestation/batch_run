@@ -1,0 +1,7 @@
+exit_status=41
+while [ $exit_status -gt 10 ]
+do
+python3 ./batch_run.py
+exit_status=$?
+echo "exit ${exit_status}"
+done
