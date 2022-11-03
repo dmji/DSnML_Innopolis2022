@@ -1,0 +1,17 @@
+data:
+  path_to_data: DaNetQA
+  train_filename: train_L3.jsonl
+  validation_filename: val_L3.jsonl
+  test_filename: test_L3.jsonl
+
+model:
+  model_name: DeepPavlov/rubert-base-cased-sentence   # pretrained model from Transformers 
+#  model_name: sberbank-ai/ruBert-base                # pretrained model from Transformers 
+  max_seq_length: 256                                 # depends on your available GPU memory (in combination with batch size)
+
+training:
+  learn_rate: 3e-5                                    # learning rate is typically ~1e-5 for transformers
+  num_epochs: 40                                      # smth around 2-6 epochs is typically fine when finetuning transformers
+  accum_steps: 4                                      # one optimization step for that many backward passes
+  batch_size: 8                                       # depends on your available GPU memory (in combination with max seq length)
+  optimize_parameters: True
