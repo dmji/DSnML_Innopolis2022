@@ -7,7 +7,6 @@ import pandas as pd
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
-import os
 
 import yaml
 from catalyst.utils import set_global_seed, prepare_cudnn
@@ -23,13 +22,19 @@ from catalyst.dl import (
 project_root: Path = Path("").parent.parent
 
 
+'label_field_name'.upper()
+
+
 SEED = 17
+NUM_CLASSES = 2
 PATH_TO_LOG_FOLDER = Path('logdir')
 
- 
+TEXT_FIELD_NAME = 'passage'
+QUEST_FIELD_NAME = 'question'
+LABEL_FIELD_NAME = 'label'
+
+
 # ## Data Load
-
-
 class TextClassificationDataset(Dataset):
     """
     Wrapper around Torch Dataset to perform text classification
@@ -106,9 +111,6 @@ class TextClassificationDataset(Dataset):
         # a dictionary with `input_ids` and `attention_mask` as keys
         output_dict = self.tokenizer.encode_plus(
             text=x,
-            ##text_pair=text_pair, 
-            ##text_target=text_target, 
-            ##text_pair_target=text_pair_target, 
             add_special_tokens=True,
             #  Pad to a maximum length specified with the argument max_length
             #  or to the maximum acceptable input length for the model if that argument is not provided.
@@ -130,6 +132,8 @@ class TextClassificationDataset(Dataset):
         output_dict["features"] = output_dict["input_ids"].squeeze(0)
         del output_dict["input_ids"]
 
+        # token_type_ids лежит во вложенном тензоре (x, 1', y), 
+        # это мешает внутренним в Catalyst трансформациям поэтому вытягиваем его в (x, y)
         output_dict["token_type_ids"] = output_dict["token_type_ids"].squeeze(0)
 
         # encoding target
@@ -155,9 +159,9 @@ def read_data(params: dict) -> Tuple[dict, dict]:
     max_seq_length          = params["model"]["max_seq_length"]
     model_name_path_or_url  = params["model"]["model_name"]
     dataset_folder          = params["data"]["path_to_data"]
-    context_column          = params["data"]["text_field_name"]
-    question_column         = params["data"]["quest_field_name"]
-    label_column            = params["data"]["label_field_name"]
+    context_column          = TEXT_FIELD_NAME
+    question_column         = QUEST_FIELD_NAME
+    label_column            = LABEL_FIELD_NAME
     train_filename          = params["data"]["train_filename"]
     validation_filename     = params["data"]["validation_filename"]
     test_filename           = params["data"]["test_filename"]
@@ -226,10 +230,8 @@ def read_data(params: dict) -> Tuple[dict, dict]:
     del test_filename, validation_filename, train_filename, seed, model_name_path_or_url, max_seq_length, label_column, question_column, context_column, dataset_folder, batch_size
     return train_val_loaders, test_loaders
 
- 
+
 # ## Model
-
-
 class BertForSequenceClassification(nn.Module):
     """
     Simplified version of the same class by HuggingFace.
@@ -295,11 +297,11 @@ class BertForSequenceClassification(nn.Module):
         # transformer output, so index 0
 
         if 1: #default out-of-box gateway
-            seq_output = bert_output[0]  # (bs, seq_len, dim)
+            seq_output = bert_output[0]                     # (bs, seq_len, dim)
             # mean pooling, i.e. getting average representation of all tokens
-            pooled_output = seq_output.mean(axis=1)  # (bs, dim)
-            pooled_output = self.dropout(pooled_output)  # (bs, dim)
-            scores = self.classifier(pooled_output)  # (bs, num_classes)
+            pooled_output = seq_output.mean(axis=1)         # (bs, dim)
+            pooled_output = self.dropout(pooled_output)     # (bs, dim)
+            scores = self.classifier(pooled_output)         # (bs, num_classes)
         else:
             encoder_out = bert_output['last_hidden_state']
             
@@ -326,27 +328,40 @@ class BertForSequenceClassification(nn.Module):
         scores = self.softmax(scores)
         return scores
 
- 
+
 # ## Train
 
- 
-# Из-за того, что Cuda не умеет освобождать VRAM каждый раз приходится перезапускать ядро поэтому делать прогон серии конфигураций не имеет смысла
+
+# Из-за того, что Cuda не умеет освобождать VRAM каждый раз приходится перезапускать ядро поэтому делать прогон серии конфигураций в Jupyter не имеет смысла.
+# 
+# Для прогона существует скрипт batch_run.py и bash цикл batch_run. 
+# Т.к. прогоны на одном сиде воспроизводимы, в batch_run ищется конфиг, для которого нет логов и делается для него тренировка.
+# При завершении прогона возвращается код 20;
+# При отсутсвии доступных конфигураций возвращается код 1 и происходит выход из цикла batch_run.
+# 
+# Такой метод позволяет после каждой тренировки принудительно вычищать зарезервированную Cuda VRAM через перезагрузку ядра
 
 
 def getResultPath(config_key):
     return PATH_TO_LOG_FOLDER / config_key / "csv_logger" / "valid.csv"
 
-def getConfigPaths(aL, aModels, aSeqSize):
+def getConfigPaths(aL, aModels, aSeqSize, aParamsOptimize = ['PT']):
     configs_dict = dict()
     for iL in aL:
         for iM in aModels:
             for iS in aSeqSize:
-                name = f'L{iL}_M{iM}_S{iS}'
-                path = str(project_root / "configs" / f"config_{name}.yml")
-                if os.path.exists(path):
-                    configs_dict[name] = path
+                for iPO in aParamsOptimize:
+                    name = f'L{iL}_M{iM}_S{iS}_{iPO}'
+                    path = str(project_root / "configs" / f"config_{name}.yml")
+                    if os.path.exists(path):
+                        configs_dict[name] = path
     return configs_dict
-configs_dict = getConfigPaths(range(0, 6), range(1, 3), [2**i for i in range(1, 10)])
+
+configs_dict = getConfigPaths(
+    range(0, 6), # уровни очистки данных с 0 (исходные) до 5 (все возможные уменьшения)
+    range(1, 3), # проверяем на двух моделях
+    [2**i for i in range(5, 10)], # размер кодировки: 32, 65, 128, 256, 512
+    ['PT', 'PF']) # True и False значения
 
 # открываем файл конфига и зачитываем параметры
 config_key = None
@@ -366,10 +381,10 @@ train_val_loaders, test_loaders = read_data(params)
 # загружаем модель из параметров с задангным кол-вом классов
 model = BertForSequenceClassification(
     pretrained_model_name=params["model"]["model_name"],
-    num_classes=params["model"]["num_classes"],
+    num_classes=NUM_CLASSES,
 )
 
-if 1:
+if params["training"]["optimize_parameters"] == True:
     param_optimizer = list(model.model.named_parameters())
     no_decay = ['bias', 'gamma', 'beta']
     optimizer_grouped_parameters = [
@@ -407,7 +422,7 @@ runner.train(
     loaders=train_val_loaders,
     # функции обратной связи
     callbacks=[
-        AccuracyCallback(num_classes=int(params["model"]["num_classes"]), input_key="logits", target_key="targets"),
+        AccuracyCallback(num_classes=NUM_CLASSES, input_key="logits", target_key="targets"),
         OptimizerCallback(accumulation_steps=int(params["training"]["accum_steps"]), metric_key=metric_key),
         SchedulerCallback(loader_key="valid", metric_key=metric_key),
         CheckpointCallback(logdir=logdir_path, loader_key="valid", metric_key=metric_key, minimize=True),
@@ -418,7 +433,7 @@ runner.train(
     # количество эпох
     num_epochs=int(params["training"]["num_epochs"]),
     # вывод логирующих сообщений
-    verbose=True,
+    verbose=False,
 )
 
 exit(20)
