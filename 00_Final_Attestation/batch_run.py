@@ -7,7 +7,7 @@ import pandas as pd
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
-
+import os
 import yaml
 from catalyst.utils import set_global_seed, prepare_cudnn
 from transformers import AutoTokenizer, AutoConfig, AutoModel
@@ -366,8 +366,10 @@ configs_dict = getConfigPaths(
 # открываем файл конфига и зачитываем параметры
 config_key = None
 for config in configs_dict:
+    print(config)
     if not os.path.exists(getResultPath(config)):
         config_key = config
+        break
 
 if config_key == None:
     exit(1)
