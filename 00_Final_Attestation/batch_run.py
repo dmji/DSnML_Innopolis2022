@@ -20,11 +20,6 @@ from catalyst.dl import (
 )
 
 project_root: Path = Path("").parent.parent
-
-
-'label_field_name'.upper()
-
-
 SEED = 17
 NUM_CLASSES = 2
 PATH_TO_LOG_FOLDER = Path('logdir')
@@ -32,7 +27,6 @@ PATH_TO_LOG_FOLDER = Path('logdir')
 TEXT_FIELD_NAME = 'passage'
 QUEST_FIELD_NAME = 'question'
 LABEL_FIELD_NAME = 'label'
-
 
 # ## Data Load
 class TextClassificationDataset(Dataset):
@@ -258,18 +252,10 @@ class BertForSequenceClassification(nn.Module):
         self.model = AutoModel.from_pretrained(pretrained_model_name, config=config)
         self.dropout = nn.Dropout(dropout)
 
-        if 1: #default out-of-box gateway
-            self.classifier = nn.Linear(config.hidden_size, num_classes)
-        else:
-            self.classifier = nn.Linear(config.hidden_size * 2, num_classes)
+        self.classifier = nn.Linear(config.hidden_size, num_classes)
         self.softmax = nn.Softmax(dim=1)
 
-    def forward(self, **kwargs):
-        attention_mask = kwargs['attention_mask']
-        features = kwargs['features']
-        token_type_ids = kwargs['token_type_ids']
-        head_mask = None
-    #def forward(self, features, attention_mask=None, token_type_ids=None, head_mask=None):
+    def forward(self, features, attention_mask=None, token_type_ids=None, head_mask=None):
         """Compute class probabilities for the input sequence.
 
         Args:
@@ -295,53 +281,17 @@ class BertForSequenceClassification(nn.Module):
             head_mask=head_mask)
         # we only need the hidden state here and don't need
         # transformer output, so index 0
-
-        if 1: #default out-of-box gateway
-            seq_output = bert_output[0]                     # (bs, seq_len, dim)
-            # mean pooling, i.e. getting average representation of all tokens
-            pooled_output = seq_output.mean(axis=1)         # (bs, dim)
-            pooled_output = self.dropout(pooled_output)     # (bs, dim)
-            scores = self.classifier(pooled_output)         # (bs, num_classes)
-        else:
-            encoder_out = bert_output['last_hidden_state']
-            
-            pooled_output, _ = torch.max(encoder_out, 1)
-            pooled_output = torch.relu(pooled_output)
-            
-            pooled_output_mean = torch.mean(encoder_out, 1)
-            #cls = bert_output[:, 0, :]
-            pooled_output = torch.cat((pooled_output, pooled_output_mean), 1)
-            
-            pooled_output = self.dropout(pooled_output)
-            scores = self.classifier(pooled_output)
-            
-            #scores = (logits,) + scores[2:]  # add hidden states and attention if they are here
-
-            #if self.model labels is not None:
-            #    if self.num_labels == 1:
-            #        # We are doing regression
-            #        loss_fct = MSELoss()
-            #        loss = loss_fct(logits.view(-1), labels.view(-1))
-            #    else:
-            #        loss = torch.nn.functional.binary_cross_entropy_with_logits( logits.view(-1), labels.view(-1) )
-            #    outputs = (loss,) + outputs
+        seq_output = bert_output[0]                     # (bs, seq_len, dim)
+        # mean pooling, i.e. getting average representation of all tokens
+        pooled_output = seq_output.mean(axis=1)         # (bs, dim)
+        pooled_output = self.dropout(pooled_output)     # (bs, dim)
+        scores = self.classifier(pooled_output)         # (bs, num_classes)
+        
         scores = self.softmax(scores)
         return scores
 
 
 # ## Train
-
-
-# Из-за того, что Cuda не умеет освобождать VRAM каждый раз приходится перезапускать ядро поэтому делать прогон серии конфигураций в Jupyter не имеет смысла.
-# 
-# Для прогона существует скрипт batch_run.py и bash цикл batch_run. 
-# Т.к. прогоны на одном сиде воспроизводимы, в batch_run ищется конфиг, для которого нет логов и делается для него тренировка.
-# При завершении прогона возвращается код 20;
-# При отсутсвии доступных конфигураций возвращается код 1 и происходит выход из цикла batch_run.
-# 
-# Такой метод позволяет после каждой тренировки принудительно вычищать зарезервированную Cuda VRAM через перезагрузку ядра
-
-
 def getResultPath(config_key):
     return PATH_TO_LOG_FOLDER / config_key / "csv_logger" / "valid.csv"
 
