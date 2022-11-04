@@ -6,7 +6,6 @@ data:
 
 model:
   model_name: DeepPavlov/rubert-base-cased-sentence   # pretrained model №1 from Transformers 
-#  model_name: sberbank-ai/ruBert-base                  # pretrained model №2 from Transformers 
   max_seq_length: 32                                 # depends on your available GPU memory (in combination with batch size)
 
 training:
