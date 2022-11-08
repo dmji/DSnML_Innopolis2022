@@ -5,8 +5,7 @@ data:
   test_filename: test_L3.jsonl
 
 model:
-  model_name: DeepPavlov/rubert-base-cased-sentence   # pretrained model from Transformers 
-#  model_name: sberbank-ai/ruBert-base                # pretrained model from Transformers 
+  model_name: sberbank-ai/ruBert-base                # pretrained model from Transformers 
   max_seq_length: 32                                 # depends on your available GPU memory (in combination with batch size)
 
 training:

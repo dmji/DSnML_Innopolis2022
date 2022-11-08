@@ -5,9 +5,8 @@ data:
   test_filename: test_L3.jsonl
 
 model:
-  model_name: DeepPavlov/rubert-base-cased-sentence   # pretrained model from Transformers 
-#  model_name: sberbank-ai/ruBert-base                # pretrained model from Transformers 
-  max_seq_length: 128                                 # depends on your available GPU memory (in combination with batch size)
+  model_name: sberbank-ai/ruBert-base                # pretrained model from Transformers 
+  max_seq_length: 512                                 # depends on your available GPU memory (in combination with batch size)
 
 training:
   learn_rate: 3e-5                                    # learning rate is typically ~1e-5 for transformers
