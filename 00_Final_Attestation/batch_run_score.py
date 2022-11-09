@@ -1,57 +1,35 @@
 import matplotlib.pyplot as plt
 import os
-
 import logging
 from pathlib import Path
 from typing import List, Mapping, Tuple
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
-import os
 import yaml
 from catalyst.utils import set_global_seed, prepare_cudnn
 from transformers import AutoTokenizer, AutoConfig, AutoModel
 from catalyst.callbacks.metrics.accuracy import AccuracyCallback
+import sklearn
+from sklearn.metrics import accuracy_score
 from catalyst.dl import (
     CheckpointCallback,
     OptimizerCallback,
     SchedulerCallback,
     SupervisedRunner,
 )
-
-project_root: Path = Path("").parent.parent
-
+import glob
 import unicodedata
-import torch
-import numpy as np
-import pandas as pd
-pd.set_option('display.max_colwidth', 0)
-
 import seaborn as sns
+
+pd.set_option('display.max_colwidth', 0)
 sns.set(rc={'figure.figsize':(11,2)})
 
+project_root: Path = Path("").parent.parent
 base_path = os.path.abspath('')
-
-try:
-    from google.colab import drive
-    drive.mount('/content/drive')
-    base_path = os.path.join(base_path, 'drive/MyDrive/DSnML_Innopolis2022')
-except:
-    pass
-
-
-trainPartNameRaw = 'train_L0'
-testPartNameRaw =  'test_L0'
-validatePartNameRaw = 'val_L0'
-
-trainPartNameL1 = 'train_L1'
-testPartNameL1 = 'test_L1' 
-validatePartNameL1 = 'val_L1'
 data_path = os.path.join(base_path, 'DaNetQA')
-
 def fileNameData(s):
     return f"{os.path.join(data_path, s)}.jsonl"
 
@@ -85,15 +63,6 @@ def loadJSONL(path, name = ""):
             
     return df, stat
 
-import seaborn as sns
-import pandas as pd
-import matplotlib.pyplot as plt
-import sklearn
-from sklearn.metrics import accuracy_score
-import glob
-import os
-
-
 def getConfigPaths(aL, aModels, aSeqSize, aParamsOptimize = ['PT']):
     configs_dict = dict()
     for iL in aL:
@@ -110,7 +79,6 @@ configs_dict = getConfigPaths(
     range(1, 3), # проверяем на двух моделях
     [2**i for i in range(5, 10)], # размер кодировки: 32, 65, 128, 256, 512
     ['PT', 'PF']) # True и False значения
-
 
 def read_data(params: dict) -> Tuple[dict, dict]:
     """
