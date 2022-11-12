@@ -23,5 +23,6 @@
 00_Final_Attestation/DaNetQA/test_L3.jsonl
 00_Final_Attestation/DaNetQA/test_L4.jsonl
 00_Final_Attestation/DaNetQA/test_L5.jsonl
+00_Final_Attestation/DaNetQA/semantic_corr/*
 00_Final_Attestation/logdir*
 00_Final_Attestation/score_models.csv
